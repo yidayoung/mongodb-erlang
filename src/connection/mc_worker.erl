@@ -27,8 +27,18 @@
 }).
 
 -spec start_link(proplists:proplist()) -> {ok, pid()}.
-start_link(Options) ->
-  proc_lib:start_link(?MODULE, init, [Options]).
+start_link(Args) ->
+  {ok, Connection} = proc_lib:start_link(?MODULE, init, [Args]),
+  Login = mc_utils:get_value(login, Args),
+  Password = mc_utils:get_value(password, Args),
+  case (Login /= undefined) and (Password /= undefined) of
+      true ->
+          AuthSource = mc_utils:get_value(auth_source, Args, <<"admin">>),
+          Version = mc_worker_api:get_version(Connection),
+          mc_auth_logic:auth(Connection, Version, AuthSource, Login, Password);
+      false -> ok
+  end,
+  {ok, Connection}.
 
 %% Make worker to go into hibernate. Any next call will wake it.
 %% It should be done if you have problems with memory while fetching > 64B binaries from db.
