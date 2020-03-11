@@ -12,8 +12,7 @@
     collection :: atom(),
     cursor :: integer(),
     batchsize :: integer(),
-    batch :: [bson:document()],
-    monitor :: reference()
+    batch :: [bson:document()]
 }).
 
 
