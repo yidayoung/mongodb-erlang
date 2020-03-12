@@ -7,15 +7,6 @@
 -export([create/5, rest/1, rest/2, take/3, take/2, close/1, next/1, next/2, next_batch/1, next_batch/2]).
 
 
--record(cursor, {
-    connection :: mc_worker:connection(),
-    collection :: atom(),
-    cursor :: integer(),
-    batchsize :: integer(),
-    batch :: [bson:document()]
-}).
-
-
 
 cursor_default_timeout() ->
     application:get_env(mongodb, cursor_timeout, infinity).
@@ -76,20 +67,15 @@ create(Connection, Collection, Cursor, BatchSize, Batch) ->
 rest(Cursor) ->
     rest(Cursor, cursor_default_timeout()).
 rest(Cursor, TimeOut) ->
-    case rest_i(Cursor, infinity, TimeOut) of
-        {Reply, #cursor{cursor = 0} = NewCursor} ->
-            close(NewCursor),
-            {Reply, NewCursor};
-        {Reply, NewCursor} ->
-            {Reply, NewCursor}
-    end.
+    {Reply, NewCursor} = rest_i(Cursor, infinity, TimeOut),
+    close(NewCursor),
+    Reply.
 
 take(Cursor, Limit) ->
     take(Cursor, Limit, cursor_default_timeout()).
 take(Cursor, Limit, TimeOut) ->
     case rest_i(Cursor, Limit, TimeOut) of
         {Reply, #cursor{cursor = 0} = NewCursor} ->
-            close(NewCursor),
             {Reply, NewCursor};
         {Reply, NewCursor} ->
             {Reply, NewCursor}
@@ -100,7 +86,6 @@ next(Cursor) ->
 next(Cursor, TimeOut) ->
     case next_i(Cursor, TimeOut) of
         {Reply, #cursor{cursor = 0, batch = []} = NewCursor} ->
-            close(Cursor),
             {Reply, NewCursor};
         {Reply, NewCursor} ->
             {Reply, NewCursor}
@@ -111,12 +96,12 @@ next_batch(Cursor) ->
 next_batch(#cursor{batchsize = Limit} = Cursor, TimeOut) ->
     case rest_i(Cursor, Limit, TimeOut) of
         {Reply, #cursor{cursor = 0} = NewCursor} ->
-            close(NewCursor),
             {Reply, NewCursor};
         {Reply, NewCursor} ->
             {Reply, NewCursor}
     end.
 
-
+close(#cursor{cursor = 0}) ->
+    ok;
 close(Cursor) ->
-    gen_server:call(Cursor#cursor.connection, #killcursor{cursorids = [Cursor#cursor.cursor]}).
+    catch gen_server:call(Cursor#cursor.connection, #killcursor{cursorids = [Cursor#cursor.cursor]}).

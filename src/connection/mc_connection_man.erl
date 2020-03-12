@@ -48,7 +48,7 @@ command(Connection, Query = #query{selector = Cmd}) ->
     BatchSize ->
       case read(Connection, Query#query{batchsize = -1}, BatchSize) of
         [] -> [];
-        {ok, Cursor} when is_pid(Cursor) ->
+        Cursor when is_record(Cursor, cursor) ->
           {ok, Cursor}
       end
   end;

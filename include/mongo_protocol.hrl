@@ -65,6 +65,13 @@
 }).
 -type conn_state() :: #conn_state{}.
 
+-record(cursor, {
+    connection :: pid(),
+    collection :: atom(),
+    cursor :: integer(),
+    batchsize :: integer(),
+    batch :: [bson:document()]
+}).
 -record(killcursor, {
   cursorids :: [mc_worker_api:cursorid()]
 }).

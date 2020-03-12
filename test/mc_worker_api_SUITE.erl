@@ -65,7 +65,7 @@ insert_and_find(Config) ->
   4 = mc_worker_api:count(Connection, Collection, #{}),
   {ok, TeamsCur} = mc_worker_api:find(Connection, Collection, #{}),
   TeamsFound = mc_cursor:rest(TeamsCur),
-  undefined = process_info(TeamsCur),
+  0 = TeamsCur#cursor.cursor,
   ?assertEqual(Teams, TeamsFound),
 
   {ok, NationalTeamsCur} = mc_worker_api:find(
@@ -210,7 +210,7 @@ aggregate_sort_and_limit(Config) ->
     {<<"aggregate">>, Collection,
       <<"pipeline">>, [{<<"$match">>, {<<"key">>, <<"test">>}}, {<<"$sort">>, {<<"tag">>, 1}}],
       <<"cursor">>, {<<"batchSize">>, 10}}),
-  true = is_pid(Cursor),
+  true = is_record(Cursor,cursor),
 
   [
     #{<<"key">> := <<"test">>, <<"value">> := <<"one">>, <<"tag">> := 1},
@@ -254,13 +254,13 @@ aggregate_cursor(Config) ->
       <<"pipeline">>, [{<<"$match">>, {<<"key">>, <<"test">>}}, {<<"$sort">>, {<<"tag">>, 1}}],
       <<"cursor">>, {<<"batchSize">>, 100}}),
 
-  {#{<<"key">> := <<"test">>, <<"value">> := <<"one">>, <<"tag">> := 1}} = mc_cursor:next(Cursor),
+    {{#{<<"key">> := <<"test">>, <<"value">> := <<"one">>, <<"tag">> := 1}},Cursor2} = mc_cursor:next(Cursor),
 
-  {#{<<"key">> := <<"test">>, <<"value">> := <<"two">>, <<"tag">> := 2}} = mc_cursor:next(Cursor),
+    {{#{<<"key">> := <<"test">>, <<"value">> := <<"two">>, <<"tag">> := 2}},Cursor3} = mc_cursor:next(Cursor2),
 
-  {#{<<"key">> := <<"test">>, <<"value">> := <<"three">>, <<"tag">> := 3}} = mc_cursor:next(Cursor),
+    {{#{<<"key">> := <<"test">>, <<"value">> := <<"three">>, <<"tag">> := 3}},Cursor4} = mc_cursor:next(Cursor3),
 
-  {#{<<"key">> := <<"test">>, <<"value">> := <<"four">>, <<"tag">> := 4}} = mc_cursor:next(Cursor),
+    {{#{<<"key">> := <<"test">>, <<"value">> := <<"four">>, <<"tag">> := 4}},Cursor5} = mc_cursor:next(Cursor4),
   Config.
 
 find_sort_skip_limit_test(Config) ->
@@ -291,14 +291,14 @@ find_sort_skip_limit_test(Config) ->
   Args = #{batchsize => 5, skip => 10},
   {ok, C} = mc_worker_api:find(Connection, Collection, Selector, Args),
 
-  [
+    {[
     #{<<"key">> := <<"test6">>, <<"value">> := <<"val6">>, <<"tag">> := 6},
     #{<<"key">> := <<"test5">>, <<"value">> := <<"val5">>, <<"tag">> := 5},
     #{<<"key">> := <<"test4">>, <<"value">> := <<"val4">>, <<"tag">> := 4},
     #{<<"key">> := <<"test3">>, <<"value">> := <<"val3">>, <<"tag">> := 3},
     #{<<"key">> := <<"test2">>, <<"value">> := <<"val2">>, <<"tag">> := 2}
-  ] = mc_cursor:next_batch(C),
-  mc_cursor:close(C),
+  ],NC} = mc_cursor:next_batch(C),
+  mc_cursor:close(NC),
 
   Config.
 

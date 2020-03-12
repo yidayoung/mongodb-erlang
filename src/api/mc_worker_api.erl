@@ -306,7 +306,7 @@ find(Cmd = #{connection := Connection, collection := Collection, selector := Sel
 find(Connection, Query) when is_record(Query, query) ->
   case mc_connection_man:read(Connection, Query) of
     [] -> [];
-    Cursor when is_tuple(Cursor) ->
+    Cursor when is_record(Cursor, cursor) ->
       {ok, Cursor}
   end.
 
