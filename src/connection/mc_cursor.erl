@@ -4,7 +4,7 @@
 -include("mongo_protocol.hrl").
 
 
--export([create/5, rest/1, rest/2, take/1, take/2, close/1, next/1, next/2, next_batch/1, next_batch/2]).
+-export([create/5, rest/1, rest/2, take/3, take/2, close/1, next/1, next/2, next_batch/1, next_batch/2]).
 
 
 -record(cursor, {
@@ -84,10 +84,10 @@ rest(Cursor, TimeOut) ->
             {Reply, NewCursor}
     end.
 
-take(Cursor) ->
-    take(Cursor, cursor_default_timeout()).
 take(Cursor, Limit) ->
-    case rest_i(Cursor, Limit, Limit) of
+    take(Cursor, Limit, cursor_default_timeout()).
+take(Cursor, Limit, TimeOut) ->
+    case rest_i(Cursor, Limit, TimeOut) of
         {Reply, #cursor{cursor = 0} = NewCursor} ->
             close(NewCursor),
             {Reply, NewCursor};
