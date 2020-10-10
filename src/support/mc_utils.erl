@@ -61,8 +61,11 @@ get_timeout() ->
     {ok, Time} -> Time;
     undefined -> infinity
   end.
-
+-if(?OTP_RELEASE < 23).
 hmac(One, Two) -> crypto:hmac(sha, One, Two).
+-else.
+hmac(One, Two) -> crypto:mac(hmac, sha, One, Two).
+-endif.
 
 pw_key(Nonce, Username, Password) ->
   bson:utf8(binary_to_hexstr(crypto:hash(md5, [Nonce, Username, pw_hash(Username, Password)]))).
